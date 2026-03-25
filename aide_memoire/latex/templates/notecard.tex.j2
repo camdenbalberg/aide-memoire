@@ -1,0 +1,81 @@
+\documentclass[10pt]{article}
+
+% PACKAGES - Core
+\usepackage[landscape,paperwidth=4in, paperheight=6in, margin=0.05in]{geometry}
+\usepackage[brazilian]{babel}
+\usepackage[utf8]{inputenc}
+
+% PACKAGES - Math & Symbols
+\usepackage{amsmath,amssymb,mathtools}
+
+% PACKAGES - Graphics & Tables
+\usepackage{tikz,graphicx,xcolor}
+\usepackage{array,tabularx,calc}
+
+% PACKAGES - Lists & Spacing
+\usepackage{enumitem,setspace,multicol,needspace}
+
+% TIKZ SETUP
+\usetikzlibrary{decorations.pathmorphing,calc,shapes.multipart,chains,arrows,positioning}
+
+% PAGE LAYOUT
+\advance\topmargin0in
+\advance\textheight3in
+\advance\textwidth0in
+\advance\oddsidemargin0in
+\advance\evensidemargin0in
+\parindent0pt
+\parskip2pt
+\tolerance=1
+\emergencystretch=\maxdimen
+\hyphenpenalty=100
+\hbadness=10000
+
+% CUSTOM COMMANDS
+\newlength{\boxsep}
+\setlength{\boxsep}{-20pt}
+
+\makeatletter
+\newlength{\tinysize}
+\begingroup\tiny
+  \xdef\@tinysizenum{\f@size}%
+\endgroup
+\tinysize=\@tinysizenum pt
+\makeatother
+
+\newcommand{\ctitle}[1]{\underline{\bf #1}}
+
+% Box styling
+\tikzstyle{mybox} = [draw=black, fill=white, very thick,
+    rectangle, rounded corners, inner sep=3.5pt, inner ysep=7.8pt]
+\tikzstyle{fancytitle} =[fill=black, text=white, font=\bfseries\footnotesize]
+
+\begin{document}
+
+\vspace{-0.4cm}
+
+\setlength{\columnsep}{0pt}
+\setlength{\columnseprule}{0pt}
+\raggedcolumns
+\setlength{\multicolsep}{0pt}
+\begin{multicols*}{2}
+
+<% for box in sheet.boxes %>
+\begin{tikzpicture}
+\node [mybox] (box){%
+    \begin{minipage}{0.96\columnwidth}
+    \begin{spacing}{0}{\tiny
+    \vspace{0pt}
+<< box.latex_content >>
+    \vspace{\dimexpr-\tinysize/2\relax}
+    }\end{spacing}
+    \end{minipage}
+};
+\node[fancytitle, right=\tinysize] at (box.north west) {<< box.title >>};
+\end{tikzpicture}
+\vspace{\boxsep}
+
+<% endfor %>
+
+\end{multicols*}
+\end{document}
