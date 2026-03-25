@@ -10,28 +10,28 @@ from aide_memoire.models import Box, ContentBlock, ExtractedDocument, PaperForma
 FORMAT_CONSTRAINTS = {
     PaperFormat.LETTER_3COL: {
         "description": "8.5x11 inch landscape paper, 3 columns",
-        "minipage_width": "0.3\\textwidth",
         "max_boxes": 12,
         "density_note": (
-            "You have a FULL page with 3 columns to fill. Generate 8-12 boxes. "
-            "Each box should contain 15-30 lines of dense content with formulas, "
-            "tables, and definitions. The content MUST fill all 3 columns — "
-            "approximately 300+ lines total across all boxes."
+            "You have a FULL 8.5x11 landscape page with 3 wide columns to fill. "
+            "Generate 9-12 boxes. Each box should be PACKED with content — 20-40 lines each. "
+            "Total content should be 400+ lines across all boxes. "
+            "Write VERBOSE definitions that span the full width of the line. "
+            "Include plain English explanations, step-by-step procedures, and worked examples. "
+            "Do NOT use fragments or shorthand — write full sentences so a student can "
+            "understand the material just from reading the cheat sheet."
         ),
     },
     PaperFormat.LETTER_4COL: {
         "description": "8.5x11 inch landscape paper, 4 columns",
-        "minipage_width": "0.2\\textwidth",
         "max_boxes": 16,
         "density_note": (
-            "You have a FULL page with 4 columns to fill. Generate 10-16 boxes. "
-            "Each box should contain 10-25 lines of dense content. "
-            "The content MUST fill all 4 columns."
+            "You have a FULL 8.5x11 landscape page with 4 columns to fill. "
+            "Generate 10-16 boxes. Each box should be densely packed with content. "
+            "Write clear definitions, include examples, and explain concepts thoroughly."
         ),
     },
     PaperFormat.NOTECARD: {
         "description": "4x6 inch landscape notecard, 2 columns",
-        "minipage_width": "0.96\\columnwidth",
         "max_boxes": 6,
         "density_note": (
             "You have a small 4x6 inch notecard with 2 columns. "
@@ -41,41 +41,47 @@ FORMAT_CONSTRAINTS = {
 }
 
 SYSTEM_PROMPT = """\
-You are an expert at creating dense, high-quality exam reference cards (cheat sheets) in LaTeX.
+You are an expert at creating comprehensive, self-contained exam reference cards (cheat sheets) in LaTeX.
 
 Your job: take extracted course material and produce the INNER CONTENT of LaTeX boxes for a cheat sheet.
 You do NOT produce the full LaTeX document — only the content that goes inside each box.
 
-CRITICAL FORMATTING RULES:
+CONTENT PHILOSOPHY — READ THIS CAREFULLY:
+- The cheat sheet must be so thorough that ANY student can pick it up and do well on the exam.
+- Write VERBOSE, complete definitions — not shorthand fragments. Each definition should be a full
+  sentence that explains the concept clearly. For example, instead of "P(A): Number between 0 and 1",
+  write "The probability of an event A, written P(A), is a number between 0 and 1 that measures
+  how likely event A is to occur."
+- Include plain English explanations of WHY formulas work and WHEN to use them.
+- Include WORKED EXAMPLES with actual numbers for every major formula or procedure. Show the setup,
+  substitution, and final answer. Examples are critical — they show students how to actually apply concepts.
+- Every line of text should extend close to the full width of the box. If a definition or explanation
+  ends far before the right edge, you are wasting space — expand it with more detail or context.
+- Include step-by-step procedures: "Step 1: ... Step 2: ..." for multi-step processes like hypothesis
+  tests, probability calculations, etc.
+- Include common mistakes, edge cases, and "watch out for" notes where relevant.
+- Use comparison tables to contrast related concepts side-by-side.
+
+FORMATTING RULES:
 - Content will be wrapped in {\\tiny ...}, so everything is already tiny font.
-- Use \\textbf{} for bold, \\textit{} for italic.
-- Use \\ctitle{Subtitle} for sub-headings within a box (pre-defined command that creates a centered underlined bold heading).
+- Use \\textbf{} for bold terms being defined, \\textit{} for emphasis.
+- Use \\ctitle{Subtitle} for sub-headings within a box (creates a centered underlined bold heading).
 - For math: use $...$ inline or \\begin{align*}...\\end{align*} for display equations.
 - For tables: use \\setlength\\tabcolsep{2pt} then \\begin{tabular}{cols}...\\end{tabular}.
+  Use p{<width>} column types for text that should wrap to fill the column width.
 - For lists: use \\begin{itemize}[leftmargin=*,topsep=0pt,itemsep=0pt,parsep=0pt] ... \\end{itemize}
-- For code: use \\begin{lstlisting}[language={...},basicstyle={\\tiny\\ttfamily},tabsize=4] ... \\end{lstlisting}
 - Use \\\\ for line breaks within flowing text.
 - Do NOT use \\vspace with negative values — these cause text overlap.
 - Do NOT use \\begin{spacing} — the template handles spacing.
 
-CONTENT VOLUME — THIS IS CRITICAL:
-- For a 3-column letter page: generate SUBSTANTIAL content. Each box should have 15-30 lines of content.
-- The boxes need to fill ALL 3 columns of the page. If you generate too little, the page will be mostly empty.
-- Include ALL relevant formulas, definitions, procedures, and worked examples from the source material.
-- Include comparison tables, step-by-step procedures, and edge cases.
-- It's better to include slightly too much than too little — overflow will be detected and fixed automatically.
-- Aim to PACK every box with as much useful information as possible.
-- Use tabular environments for structured comparisons — they fill space efficiently and are very readable.
-
-CONTENT DENSITY STYLE:
-- Prioritize: formulas > definitions > procedures > key examples > explanations.
-- Use symbols and shorthand over words when the meaning is clear.
-- For hypothesis tests, use the compact tabular format:
-  \\setlength\\tabcolsep{2pt}
-  \\begin{tabular}{p{0.1\\textwidth}p{0.75\\textwidth}}
-    {\\bf $H_0$}: & ... \\\\
-    {\\bf $H_A$}: & ...
-  \\end{tabular}
+FILLING SPACE — CRITICAL:
+- Each box should have 25-45 lines of dense content.
+- Write definitions as full sentences or short paragraphs, NOT as single-word fragments.
+- After a formula, add 1-2 sentences explaining what each variable means and when to use the formula.
+- After stating a rule, give a concrete numeric example demonstrating it.
+- Text lines should use the full width available. Avoid short fragments that leave the right half empty.
+- Tabular environments should use p{} columns that sum to roughly the full minipage width so text wraps
+  and fills the space. Example: \\begin{tabular}{p{0.35\\columnwidth}p{0.6\\columnwidth}}.
 
 LaTeX SAFETY:
 - & is ONLY allowed inside tabular/align environments. Everywhere else use \\&.
@@ -83,6 +89,7 @@ LaTeX SAFETY:
 - Do NOT use \\begin{document}, \\documentclass, or any preamble commands.
 - Do NOT wrap content in {\\tiny ...} or \\begin{spacing} — handled by template.
 - Do NOT use \\section, \\subsection, or other sectioning commands.
+- Do NOT use $$ ... $$ for display math — use \\begin{align*} ... \\end{align*} instead.
 
 OUTPUT FORMAT:
 For each box, output exactly:
@@ -130,9 +137,14 @@ def _build_user_prompt(
 
     parts.append("=" * 60)
     parts.append(
-        f"\nNow generate {effective_max} or fewer boxes of dense LaTeX cheat sheet "
+        f"\nNow generate {effective_max} or fewer boxes of comprehensive LaTeX cheat sheet "
         f"content covering the most important material above. Group related topics "
-        f"into the same box. Every box must have a clear, descriptive title."
+        f"into the same box. Every box must have a clear, descriptive title.\n\n"
+        f"REMEMBER: Write VERBOSE definitions (full sentences, not fragments). Include WORKED "
+        f"EXAMPLES with numbers for every major concept. Add plain English explanations of when "
+        f"and why to use each formula. Every text line should use the full width of the box — "
+        f"do not leave half-empty lines. A student with no prior knowledge should be able to "
+        f"read this sheet and understand how to solve exam problems."
     )
 
     return "\n".join(parts)

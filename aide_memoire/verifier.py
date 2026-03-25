@@ -70,7 +70,7 @@ class OverflowVerifier:
                         curr_bottom = sorted_blocks[i][3]
                         next_top = sorted_blocks[i + 1][1]
                         overlap = curr_bottom - next_top
-                        if overlap > 5:  # More than 5pt overlap
+                        if overlap > 20:  # More than 20pt overlap (TikZ titles overlap their boxes)
                             result.warnings.append(
                                 f"Page {page_idx + 1}: Possible box overlap "
                                 f"({overlap:.1f}pt) in column ~{col_key}"

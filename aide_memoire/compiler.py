@@ -30,18 +30,21 @@ class LatexCompiler:
                 text=True,
                 timeout=120,
                 cwd=str(tex_path.parent),
+                encoding="utf-8",
+                errors="replace",
             )
 
         pdf_path = output_dir / tex_path.with_suffix(".pdf").name
         if not pdf_path.exists():
             # Only raise if no PDF was produced at all
-            errors = self._parse_errors(result.stdout)
+            stdout = result.stdout or ""
+            errors = self._parse_errors(stdout)
             raise CompilationError(
                 f"pdflatex failed (no PDF produced):\n" + "\n".join(errors)
             )
 
         # Warn about non-fatal errors but don't raise
-        self.warnings = self._parse_errors(result.stdout)
+        self.warnings = self._parse_errors(result.stdout or "")
         return pdf_path
 
     def _parse_errors(self, log_text: str) -> list[str]:
