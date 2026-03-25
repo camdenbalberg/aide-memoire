@@ -20,14 +20,18 @@
 \advance\oddsidemargin-1.5in
 \advance\evensidemargin-1.5in
 \parindent0pt
-\parskip2pt
+\parskip0pt
 \tolerance=1
 \emergencystretch=\maxdimen
 \hyphenpenalty=100
 \hbadness=10000
 
 % CUSTOM COMMANDS
-\newcommand{\ctitle}[1]{\centering\underline{\bf\ #1\ }\raggedright}
+\newcommand{\ctitle}[1]{
+
+\centering\underline{\bf\ #1\ }
+
+\raggedright}
 \newcommand{\hr}{\centerline{\rule{3.5in}{1pt}}}
 
 \begin{document}
@@ -48,11 +52,9 @@
 \begin{tikzpicture}
 \node [mybox] (box){%
     \begin{minipage}{0.3\textwidth}
-\begin{spacing}{0}{\tiny
+{\tiny
 << box.latex_content >>
-\vspace{-0.2cm}
-}\end{spacing}
-    \end{minipage}
+}\end{minipage}
 };
 \node[fancytitle, right=10pt] at (box.north west) {<< box.title | latex_escape >>};
 \end{tikzpicture}

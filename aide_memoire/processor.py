@@ -12,19 +12,31 @@ FORMAT_CONSTRAINTS = {
         "description": "8.5x11 inch landscape paper, 3 columns",
         "minipage_width": "0.3\\textwidth",
         "max_boxes": 12,
-        "density_note": "You have a full page with 3 columns. Aim for 8-12 boxes total.",
+        "density_note": (
+            "You have a FULL page with 3 columns to fill. Generate 8-12 boxes. "
+            "Each box should contain 15-30 lines of dense content with formulas, "
+            "tables, and definitions. The content MUST fill all 3 columns — "
+            "approximately 300+ lines total across all boxes."
+        ),
     },
     PaperFormat.LETTER_4COL: {
         "description": "8.5x11 inch landscape paper, 4 columns",
         "minipage_width": "0.2\\textwidth",
         "max_boxes": 16,
-        "density_note": "You have a full page with 4 narrower columns. Aim for 10-16 boxes total.",
+        "density_note": (
+            "You have a FULL page with 4 columns to fill. Generate 10-16 boxes. "
+            "Each box should contain 10-25 lines of dense content. "
+            "The content MUST fill all 4 columns."
+        ),
     },
     PaperFormat.NOTECARD: {
         "description": "4x6 inch landscape notecard, 2 columns",
         "minipage_width": "0.96\\columnwidth",
         "max_boxes": 6,
-        "density_note": "You have a small notecard with 2 columns. Aim for 4-6 boxes. Be extremely concise.",
+        "density_note": (
+            "You have a small 4x6 inch notecard with 2 columns. "
+            "Generate 4-6 boxes. Be extremely concise."
+        ),
     },
 }
 
@@ -35,34 +47,41 @@ Your job: take extracted course material and produce the INNER CONTENT of LaTeX 
 You do NOT produce the full LaTeX document — only the content that goes inside each box.
 
 CRITICAL FORMATTING RULES:
-- Content will be wrapped in {\\tiny ...} with \\begin{spacing}{0}, so everything is already tiny.
+- Content will be wrapped in {\\tiny ...}, so everything is already tiny font.
 - Use \\textbf{} for bold, \\textit{} for italic.
-- Use \\ctitle{Subtitle} for sub-headings within a box (this command is pre-defined).
+- Use \\ctitle{Subtitle} for sub-headings within a box (pre-defined command that creates a centered underlined bold heading).
 - For math: use $...$ inline or \\begin{align*}...\\end{align*} for display equations.
-- For tables: use \\begin{tabular}{cols}...\\end{tabular} with \\setlength\\tabcolsep{2pt} for tight tables.
+- For tables: use \\setlength\\tabcolsep{2pt} then \\begin{tabular}{cols}...\\end{tabular}.
 - For lists: use \\begin{itemize}[leftmargin=*,topsep=0pt,itemsep=0pt,parsep=0pt] ... \\end{itemize}
 - For code: use \\begin{lstlisting}[language={...},basicstyle={\\tiny\\ttfamily},tabsize=4] ... \\end{lstlisting}
-- Use \\vspace{-0.3cm} between sections to save vertical space.
-- Use \\\\ for line breaks within text.
+- Use \\\\ for line breaks within flowing text.
+- Do NOT use \\vspace with negative values — these cause text overlap.
+- Do NOT use \\begin{spacing} — the template handles spacing.
 
-CONTENT DENSITY RULES:
-- Be EXTREMELY dense. Every line should carry information.
-- Abbreviate where possible: "approximately" → "≈", "therefore" → "∴", "because" → "∵"
-- Remove filler words, verbose explanations, and redundancy.
+CONTENT VOLUME — THIS IS CRITICAL:
+- For a 3-column letter page: generate SUBSTANTIAL content. Each box should have 15-30 lines of content.
+- The boxes need to fill ALL 3 columns of the page. If you generate too little, the page will be mostly empty.
+- Include ALL relevant formulas, definitions, procedures, and worked examples from the source material.
+- Include comparison tables, step-by-step procedures, and edge cases.
+- It's better to include slightly too much than too little — overflow will be detected and fixed automatically.
+- Aim to PACK every box with as much useful information as possible.
+- Use tabular environments for structured comparisons — they fill space efficiently and are very readable.
+
+CONTENT DENSITY STYLE:
 - Prioritize: formulas > definitions > procedures > key examples > explanations.
 - Use symbols and shorthand over words when the meaning is clear.
 - For hypothesis tests, use the compact tabular format:
+  \\setlength\\tabcolsep{2pt}
   \\begin{tabular}{p{0.1\\textwidth}p{0.75\\textwidth}}
     {\\bf $H_0$}: & ... \\\\
     {\\bf $H_A$}: & ...
   \\end{tabular}
 
 LaTeX SAFETY:
-- In box TITLES: use \\& for &, \\% for %, \\# for #, \\_ for _ (titles go in TikZ nodes).
-- In box CONTENT: & is OK inside tabular environments but must be escaped (\\&) everywhere else.
-- In \\ctitle{} arguments: escape & as \\& since ctitle is not a tabular context.
+- & is ONLY allowed inside tabular/align environments. Everywhere else use \\&.
+- In \\ctitle{} arguments: escape & as \\& (ctitle is not a tabular context).
 - Do NOT use \\begin{document}, \\documentclass, or any preamble commands.
-- Do NOT wrap content in {\\tiny ...} or \\begin{spacing} — that's handled by the template.
+- Do NOT wrap content in {\\tiny ...} or \\begin{spacing} — handled by template.
 - Do NOT use \\section, \\subsection, or other sectioning commands.
 
 OUTPUT FORMAT:
