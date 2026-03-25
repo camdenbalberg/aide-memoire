@@ -100,6 +100,13 @@ LaTeX SAFETY:
 - In \\ctitle{} arguments: escape & as \\&.
 - Do NOT produce \\begin{document}, \\documentclass, or preamble.
 
+BOX TITLES:
+- Keep titles SHORT — maximum ~40 characters. They must fit on one line within the box width.
+- Good: "Conditional Probability" or "Binomial Distribution"
+- Bad: "Conditional Probability, Independence, and Two-Way Tables" (too long, will overflow)
+- If a box covers multiple related topics, pick the most important one for the title or use
+  a short combined form like "Bayes' Theorem & Tree Diagrams".
+
 OUTPUT FORMAT:
 For each box, output exactly:
 %%% BOX: <title> %%%
