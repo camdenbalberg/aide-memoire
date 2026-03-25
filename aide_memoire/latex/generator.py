@@ -1,4 +1,4 @@
-"""Orchestrator: ties extraction → processing → rendering → compilation → verification."""
+"""Orchestrator: ties extraction, processing, rendering, compilation, verification."""
 
 from pathlib import Path
 
@@ -21,7 +21,7 @@ class CheatSheetGenerator:
         self.renderer = LatexRenderer()
         self.compiler = LatexCompiler()
         self.verifier = OverflowVerifier()
-        self.console = Console()
+        self.console = Console(force_terminal=True)
 
     def generate(self) -> Path:
         """Run the full pipeline and return the path to the output file."""
@@ -34,7 +34,7 @@ class CheatSheetGenerator:
             extractor = BaseExtractor.for_file(f)
             doc = extractor.extract(f, output_dir=self.config.output_dir)
             documents.append(doc)
-            self.console.print(f"    → {len(doc.blocks)} content blocks extracted")
+            self.console.print(f"    -> {len(doc.blocks)} content blocks extracted")
 
         total_blocks = sum(len(d.blocks) for d in documents)
         self.console.print(f"  Total: {total_blocks} content blocks from {len(documents)} file(s)")
@@ -44,7 +44,7 @@ class CheatSheetGenerator:
         if self.config.intel_path:
             self.console.print(f"[bold blue]Step 2/5:[/] Parsing intel hints from {self.config.intel_path}...")
             intel_hints = parse_intel(self.config.intel_path)
-            self.console.print(f"  → {len(intel_hints)} hints loaded")
+            self.console.print(f"  -> {len(intel_hints)} hints loaded")
         else:
             self.console.print("[bold blue]Step 2/5:[/] No intel file provided, skipping.")
 
@@ -56,9 +56,9 @@ class CheatSheetGenerator:
             paper_format=self.config.paper_format,
             max_boxes=self.config.max_boxes,
         )
-        self.console.print(f"  → {len(boxes)} boxes generated")
+        self.console.print(f"  -> {len(boxes)} boxes generated")
         for box in boxes:
-            self.console.print(f"    • {box.title}")
+            self.console.print(f"    - {box.title}")
 
         # Step 4: Render LaTeX
         self.console.print("[bold blue]Step 4/5:[/] Generating LaTeX...")
@@ -73,16 +73,18 @@ class CheatSheetGenerator:
         self.config.output_dir.mkdir(parents=True, exist_ok=True)
         tex_path = self.config.output_dir / "cheatsheet.tex"
         tex_path.write_text(latex_source, encoding="utf-8")
-        self.console.print(f"  → Written to {tex_path}")
+        self.console.print(f"  -> Written to {tex_path}")
 
         if self.config.no_compile:
             self.console.print("[green]Done! LaTeX generated (compilation skipped).[/]")
             return tex_path
 
         # Step 5: Compile and verify
-        self.console.print("[bold blue]Step 5/5:[/] Compiling LaTeX → PDF...")
+        self.console.print("[bold blue]Step 5/5:[/] Compiling LaTeX -> PDF...")
         pdf_path = self.compiler.compile(tex_path)
-        self.console.print(f"  → Compiled to {pdf_path}")
+        self.console.print(f"  -> Compiled to {pdf_path}")
+        if self.compiler.warnings:
+            self.console.print(f"  [yellow]{len(self.compiler.warnings)} LaTeX warning(s)[/]")
 
         if self.config.no_verify:
             self.console.print("[green]Done! PDF generated (verification skipped).[/]")
@@ -95,7 +97,7 @@ class CheatSheetGenerator:
                 if result.warnings:
                     self.console.print("[yellow]Warnings:[/]")
                     for w in result.warnings:
-                        self.console.print(f"  ⚠ {w}")
+                        self.console.print(f"  [yellow]- {w}[/]")
                 self.console.print("[bold green]Verification passed! No overflow detected.[/]")
                 return pdf_path
 
@@ -103,7 +105,7 @@ class CheatSheetGenerator:
                 f"[yellow]Overflow detected (attempt {attempt + 1}/{self.config.max_retries}), condensing...[/]"
             )
             for e in result.errors:
-                self.console.print(f"  ✗ {e}")
+                self.console.print(f"  [red]x {e}[/]")
 
             boxes = self.processor.condense(
                 boxes, result.errors, self.config.paper_format

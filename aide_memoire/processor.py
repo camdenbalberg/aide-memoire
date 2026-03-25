@@ -58,7 +58,9 @@ CONTENT DENSITY RULES:
   \\end{tabular}
 
 LaTeX SAFETY:
-- Escape special characters: use \\& for &, \\% for %, \\$ for $ (when not in math mode).
+- In box TITLES: use \\& for &, \\% for %, \\# for #, \\_ for _ (titles go in TikZ nodes).
+- In box CONTENT: & is OK inside tabular environments but must be escaped (\\&) everywhere else.
+- In \\ctitle{} arguments: escape & as \\& since ctitle is not a tabular context.
 - Do NOT use \\begin{document}, \\documentclass, or any preamble commands.
 - Do NOT wrap content in {\\tiny ...} or \\begin{spacing} — that's handled by the template.
 - Do NOT use \\section, \\subsection, or other sectioning commands.
@@ -125,7 +127,12 @@ def _parse_boxes(response_text: str) -> list[Box]:
     for title, content in matches:
         latex_content = content.strip()
         if latex_content:
-            boxes.append(Box(title=title.strip(), latex_content=latex_content))
+            # Store raw title — escaping happens at render time via latex_escape filter
+            clean_title = title.strip()
+            # Strip any escaping Claude may have added — the filter will re-escape
+            clean_title = clean_title.replace(r"\&", "&").replace(r"\%", "%")
+            clean_title = clean_title.replace(r"\#", "#").replace(r"\_", "_")
+            boxes.append(Box(title=clean_title, latex_content=latex_content))
     return boxes
 
 

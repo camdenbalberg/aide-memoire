@@ -98,9 +98,9 @@ def verify(pdf_file, expected_pages):
     else:
         console.print("[bold red]Verification failed:[/]")
         for e in result.errors:
-            console.print(f"  ✗ {e}")
+            console.print(f"  x {e}")
 
     if result.warnings:
         console.print("[yellow]Warnings:[/]")
         for w in result.warnings:
-            console.print(f"  ⚠ {w}")
+            console.print(f"  - {w}")

@@ -13,6 +13,16 @@ TEMPLATE_MAP = {
 }
 
 
+def _latex_escape_title(text: str) -> str:
+    """Escape special LaTeX characters in box titles (not in content)."""
+    # Only escape characters that are problematic in TikZ node text
+    text = text.replace("&", r"\&")
+    text = text.replace("%", r"\%")
+    text = text.replace("#", r"\#")
+    text = text.replace("_", r"\_")
+    return text
+
+
 class LatexRenderer:
     def __init__(self):
         template_dir = Path(__file__).parent / "templates"
@@ -27,6 +37,7 @@ class LatexRenderer:
             comment_end_string="#>",
             autoescape=False,
         )
+        self.env.filters["latex_escape"] = _latex_escape_title
 
     def render(self, sheet: Sheet) -> str:
         """Render a Sheet into a complete LaTeX document string."""

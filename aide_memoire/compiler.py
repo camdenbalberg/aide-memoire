@@ -12,7 +12,9 @@ class CompilationError(Exception):
 class LatexCompiler:
     def compile(self, tex_path: Path, output_dir: Path | None = None) -> Path:
         """Compile .tex to .pdf using pdflatex. Returns path to PDF."""
-        output_dir = output_dir or tex_path.parent
+        # Resolve to absolute paths to avoid cwd/relative path confusion
+        tex_path = tex_path.resolve()
+        output_dir = (output_dir or tex_path.parent).resolve()
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Run pdflatex twice for cross-references
@@ -29,20 +31,17 @@ class LatexCompiler:
                 timeout=120,
                 cwd=str(tex_path.parent),
             )
-            if result.returncode != 0 and run == 1:
-                # Only raise on the second pass — first pass may have warnings
-                errors = self._parse_errors(result.stdout)
-                if errors:
-                    raise CompilationError(
-                        f"pdflatex failed:\n" + "\n".join(errors)
-                    )
 
         pdf_path = output_dir / tex_path.with_suffix(".pdf").name
         if not pdf_path.exists():
+            # Only raise if no PDF was produced at all
+            errors = self._parse_errors(result.stdout)
             raise CompilationError(
-                f"PDF not generated at {pdf_path}. "
-                f"pdflatex output:\n{result.stdout[-1000:]}"
+                f"pdflatex failed (no PDF produced):\n" + "\n".join(errors)
             )
+
+        # Warn about non-fatal errors but don't raise
+        self.warnings = self._parse_errors(result.stdout)
         return pdf_path
 
     def _parse_errors(self, log_text: str) -> list[str]:
