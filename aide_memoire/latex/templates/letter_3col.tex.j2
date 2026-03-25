@@ -1,7 +1,7 @@
 \documentclass[11pt]{article}
 
 % PACKAGES
-\usepackage[landscape,margin=0.3in]{geometry}
+\usepackage[landscape,margin=0.15in]{geometry}
 \usepackage{url,multicol}
 \usepackage{amsmath,amssymb,amsfonts,mathtools}
 \usepackage{tikz,graphicx,xcolor}
@@ -56,7 +56,7 @@
 \node [mybox] (box){%
     \begin{minipage}{0.95\columnwidth}
 \vspace{4pt}
-{\scriptsize
+{\scriptsize\linespread{0.8}\selectfont
 << box.latex_content >>
 }\end{minipage}
 };

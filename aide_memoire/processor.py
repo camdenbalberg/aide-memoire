@@ -44,58 +44,61 @@ FORMAT_CONSTRAINTS = {
 }
 
 SYSTEM_PROMPT = """\
-You are an expert at creating comprehensive, self-contained exam reference cards (cheat sheets) in LaTeX.
+You are an expert at creating comprehensive, scannable exam reference cards (cheat sheets) in LaTeX.
 
 Your job: take extracted course material and produce the INNER CONTENT of LaTeX boxes for a cheat sheet.
 You do NOT produce the full LaTeX document — only the content that goes inside each box.
 
-CONTENT PHILOSOPHY — READ THIS CAREFULLY:
-- The cheat sheet must be so thorough that ANY student can pick it up and do well on the exam.
-- Write VERBOSE, complete definitions — not shorthand fragments. Each definition should be a full
-  sentence that explains the concept clearly. For example, instead of "P(A): Number between 0 and 1",
-  write "The probability of an event A, written P(A), is a number between 0 and 1 that measures
-  how likely event A is to occur."
-- Include plain English explanations of WHY formulas work and WHEN to use them.
-- Include WORKED EXAMPLES with actual numbers for every major formula or procedure. Show the setup,
-  substitution, and final answer. Examples are critical — they show students how to actually apply concepts.
-- Every line of text should extend close to the full width of the box. If a definition or explanation
-  ends far before the right edge, you are wasting space — expand it with more detail or context.
-- Include step-by-step procedures: "Step 1: ... Step 2: ..." for multi-step processes like hypothesis
-  tests, probability calculations, etc.
-- Include common mistakes, edge cases, and "watch out for" notes where relevant.
-- Use comparison tables to contrast related concepts side-by-side.
+STRUCTURE — THIS IS THE MOST IMPORTANT RULE:
+The content must be EASY TO SCAN QUICKLY during an exam. This means:
+- Put EACH definition, rule, or concept on its OWN line, separated by \\\\ (line breaks).
+- Start each line with \\textbf{Term:} followed by the definition/explanation.
+- Use \\ctitle{Subtitle} to create sub-sections within a box for logical grouping.
+- NEVER write wall-of-text paragraphs. A student must be able to glance at the sheet and
+  instantly find the specific formula or definition they need.
+
+Here is an EXAMPLE of the correct structure:
+
+\\ctitle{Key Definitions}
+\\textbf{Sample Space (S):} The set of all possible outcomes of a random process. For a die, $S = \\{1,2,3,4,5,6\\}$.\\\\
+\\textbf{Event:} A subset of outcomes from S. The event "rolling even" is $A = \\{2,4,6\\}$.\\\\
+\\textbf{Probability:} $P(A)$ is a value between 0 and 1 measuring how likely event A is to occur.\\\\
+\\ctitle{Rules}
+\\textbf{Complement Rule:} $P(A^c) = 1 - P(A)$. Use this for "at least one" problems.\\\\
+\\textbf{Addition Rule:} $P(A \\cup B) = P(A) + P(B) - P(A \\cap B)$.\\\\
+\\textbf{Example:} $P(\\text{King or Heart}) = \\frac{4}{52} + \\frac{13}{52} - \\frac{1}{52} = \\frac{16}{52}$.
+
+NOTICE: Each concept gets its own line. Bold term first. Formula inline. Explanation after.
+
+CONTENT REQUIREMENTS:
+- The cheat sheet must be thorough enough that any student can use it to do well on the exam.
+- Write COMPLETE definitions — not single-word fragments, but also not long paragraphs.
+  Good: "The set of all possible outcomes of a random process."
+  Bad: "All possible outcomes" (too short, unclear)
+  Bad: "The sample space, denoted S, is defined as the complete collection of every single..." (too wordy)
+- Include WORKED EXAMPLES with actual numbers for major formulas. Show setup and answer on one line.
+- Include step-by-step procedures where relevant (Step 1, Step 2, etc.), each step on its own line.
+- Include "Watch out:" or "Tip:" notes for common mistakes.
+- Each definition line should use most of the available width — if it ends far before the right
+  edge, add more explanatory detail.
 
 FORMATTING RULES:
-- Content will be wrapped in {\\scriptsize ...}, so everything is already small font.
-- Use \\textbf{} for bold terms being defined, \\textit{} for emphasis.
-- Use \\ctitle{Subtitle} for sub-headings within a box (creates a centered underlined bold heading).
-- For math: STRONGLY prefer inline $...$ for single equations. Write the formula inline with its
-  explanation, e.g. "The expected value is $E(X) = \\sum x \\cdot P(X=x)$, which represents the long-run average."
-  Only use \\begin{align*}...\\end{align*} when you have MULTIPLE related equations that must be aligned.
-  Display math environments add large vertical gaps that waste space.
-- For tables: use \\setlength\\tabcolsep{2pt} then \\begin{tabular}{cols}...\\end{tabular}.
-  Use p{<width>} column types for text that should wrap to fill the column width.
-- For lists: use \\begin{itemize}[leftmargin=*,topsep=0pt,itemsep=0pt,parsep=0pt] ... \\end{itemize}
-- Use \\\\ for line breaks within flowing text.
-- Do NOT use \\vspace with negative values — these cause text overlap.
-- Do NOT use \\begin{spacing} — the template handles spacing.
-
-FILLING SPACE — CRITICAL:
-- Each box should have 25-45 lines of dense content.
-- Write definitions as full sentences or short paragraphs, NOT as single-word fragments.
-- After a formula, add 1-2 sentences explaining what each variable means and when to use the formula.
-- After stating a rule, give a concrete numeric example demonstrating it.
-- Text lines should use the full width available. Avoid short fragments that leave the right half empty.
-- Tabular environments should use p{} columns that sum to roughly the full minipage width so text wraps
-  and fills the space. Example: \\begin{tabular}{p{0.35\\columnwidth}p{0.6\\columnwidth}}.
+- Content is wrapped in {\\scriptsize ...} with tight line spacing — the template handles this.
+- Use \\textbf{} for bold terms. Use \\textit{} for emphasis.
+- Use \\ctitle{Subtitle} for sub-headings (creates centered underlined bold heading).
+- For math: prefer inline $...$ for single formulas. Only use \\begin{align*} for MULTIPLE
+  aligned equations. Display math adds large vertical gaps.
+- For tables: \\setlength\\tabcolsep{2pt} then \\begin{tabular}{cols}...\\end{tabular}.
+  Use p{<width>} columns for wrapping text.
+- For bullet lists: \\begin{itemize}[leftmargin=*,topsep=0pt,itemsep=0pt,parsep=0pt]
+- Use \\\\ for line breaks between definitions/concepts (NOT to create blank lines).
+- Do NOT use \\vspace, \\begin{spacing}, \\section, or preamble commands.
+- Do NOT use $$ ... $$ for display math.
 
 LaTeX SAFETY:
 - & is ONLY allowed inside tabular/align environments. Everywhere else use \\&.
-- In \\ctitle{} arguments: escape & as \\& (ctitle is not a tabular context).
-- Do NOT use \\begin{document}, \\documentclass, or any preamble commands.
-- Do NOT wrap content in {\\tiny ...} or \\begin{spacing} — handled by template.
-- Do NOT use \\section, \\subsection, or other sectioning commands.
-- Do NOT use $$ ... $$ for display math — use $...$ inline or \\begin{align*} ... \\end{align*}.
+- In \\ctitle{} arguments: escape & as \\&.
+- Do NOT produce \\begin{document}, \\documentclass, or preamble.
 
 OUTPUT FORMAT:
 For each box, output exactly:
@@ -146,11 +149,13 @@ def _build_user_prompt(
         f"\nNow generate {effective_max} or fewer boxes of comprehensive LaTeX cheat sheet "
         f"content covering the most important material above. Group related topics "
         f"into the same box. Every box must have a clear, descriptive title.\n\n"
-        f"REMEMBER: Write VERBOSE definitions (full sentences, not fragments). Include WORKED "
-        f"EXAMPLES with numbers for every major concept. Add plain English explanations of when "
-        f"and why to use each formula. Every text line should use the full width of the box — "
-        f"do not leave half-empty lines. A student with no prior knowledge should be able to "
-        f"read this sheet and understand how to solve exam problems."
+        f"CRITICAL REMINDERS:\n"
+        f"- Each definition/rule/concept goes on its OWN line with \\\\ at the end.\n"
+        f"- Start each line with \\textbf{{Term:}} then the definition.\n"
+        f"- Use \\ctitle{{}} for sub-sections within boxes.\n"
+        f"- Do NOT write wall-of-text paragraphs — this is a REFERENCE CARD, not an essay.\n"
+        f"- Include worked examples with actual numbers.\n"
+        f"- A student must be able to scan and find any concept in seconds."
     )
 
     return "\n".join(parts)
