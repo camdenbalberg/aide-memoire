@@ -92,7 +92,7 @@ class CheatSheetGenerator:
 
         # Verify with retry loop
         for attempt in range(self.config.max_retries):
-            result = self.verifier.verify(pdf_path)
+            result = self.verifier.verify(pdf_path, expected_pages=self.config.expected_pages)
             if result.passed:
                 if result.warnings:
                     self.console.print("[yellow]Warnings:[/]")
@@ -107,8 +107,16 @@ class CheatSheetGenerator:
             for e in result.errors:
                 self.console.print(f"  [red]x {e}[/]")
 
+            # Extract actual page count from error message
+            import fitz as _fitz
+            _doc = _fitz.open(str(pdf_path))
+            actual_pages = len(_doc)
+            _doc.close()
+
             boxes = self.processor.condense(
-                boxes, result.errors, self.config.paper_format
+                boxes, result.errors, self.config.paper_format,
+                actual_pages=actual_pages,
+                expected_pages=self.config.expected_pages,
             )
             sheet.boxes = boxes
             latex_source = self.renderer.render(sheet)

@@ -23,6 +23,12 @@
 \setlength{\columnsep}{6pt}
 \setlength{\multicolsep}{2pt}
 
+% Minimize white space around display math
+\setlength{\abovedisplayskip}{2pt}
+\setlength{\belowdisplayskip}{2pt}
+\setlength{\abovedisplayshortskip}{1pt}
+\setlength{\belowdisplayshortskip}{1pt}
+
 % CUSTOM COMMANDS
 \newcommand{\ctitle}[1]{
 
@@ -49,7 +55,8 @@
 \begin{tikzpicture}
 \node [mybox] (box){%
     \begin{minipage}{0.95\columnwidth}
-{\tiny
+\vspace{4pt}
+{\scriptsize
 << box.latex_content >>
 }\end{minipage}
 };

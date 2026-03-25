@@ -9,24 +9,27 @@ from aide_memoire.models import Box, ContentBlock, ExtractedDocument, PaperForma
 # Format-specific constraints for the prompt
 FORMAT_CONSTRAINTS = {
     PaperFormat.LETTER_3COL: {
-        "description": "8.5x11 inch landscape paper, 3 columns",
-        "max_boxes": 12,
+        "description": "8.5x11 inch landscape paper, 3 columns, 2 PAGES (front and back)",
+        "max_boxes": 20,
         "density_note": (
-            "You have a FULL 8.5x11 landscape page with 3 wide columns to fill. "
-            "Generate 9-12 boxes. Each box should be PACKED with content — 20-40 lines each. "
-            "Total content should be 400+ lines across all boxes. "
+            "You have TWO FULL 8.5x11 landscape pages (front and back of one sheet) with 3 wide columns each. "
+            "That is 6 total columns of space. Generate 14-20 boxes to fill both pages. "
+            "Each box should be PACKED with content — 25-45 lines each. "
+            "Total content should be 700+ lines across all boxes. "
             "Write VERBOSE definitions that span the full width of the line. "
-            "Include plain English explanations, step-by-step procedures, and worked examples. "
+            "Include plain English explanations, step-by-step procedures, and worked examples with numbers. "
             "Do NOT use fragments or shorthand — write full sentences so a student can "
-            "understand the material just from reading the cheat sheet."
+            "understand the material just from reading the cheat sheet. "
+            "Include common mistakes, edge cases, and tips."
         ),
     },
     PaperFormat.LETTER_4COL: {
-        "description": "8.5x11 inch landscape paper, 4 columns",
-        "max_boxes": 16,
+        "description": "8.5x11 inch landscape paper, 4 columns, 2 PAGES (front and back)",
+        "max_boxes": 24,
         "density_note": (
-            "You have a FULL 8.5x11 landscape page with 4 columns to fill. "
-            "Generate 10-16 boxes. Each box should be densely packed with content. "
+            "You have TWO FULL 8.5x11 landscape pages (front and back) with 4 columns each. "
+            "That is 8 total columns of space. Generate 16-24 boxes. "
+            "Each box should be densely packed with content. "
             "Write clear definitions, include examples, and explain concepts thoroughly."
         ),
     },
@@ -63,10 +66,13 @@ CONTENT PHILOSOPHY — READ THIS CAREFULLY:
 - Use comparison tables to contrast related concepts side-by-side.
 
 FORMATTING RULES:
-- Content will be wrapped in {\\tiny ...}, so everything is already tiny font.
+- Content will be wrapped in {\\scriptsize ...}, so everything is already small font.
 - Use \\textbf{} for bold terms being defined, \\textit{} for emphasis.
 - Use \\ctitle{Subtitle} for sub-headings within a box (creates a centered underlined bold heading).
-- For math: use $...$ inline or \\begin{align*}...\\end{align*} for display equations.
+- For math: STRONGLY prefer inline $...$ for single equations. Write the formula inline with its
+  explanation, e.g. "The expected value is $E(X) = \\sum x \\cdot P(X=x)$, which represents the long-run average."
+  Only use \\begin{align*}...\\end{align*} when you have MULTIPLE related equations that must be aligned.
+  Display math environments add large vertical gaps that waste space.
 - For tables: use \\setlength\\tabcolsep{2pt} then \\begin{tabular}{cols}...\\end{tabular}.
   Use p{<width>} column types for text that should wrap to fill the column width.
 - For lists: use \\begin{itemize}[leftmargin=*,topsep=0pt,itemsep=0pt,parsep=0pt] ... \\end{itemize}
@@ -89,7 +95,7 @@ LaTeX SAFETY:
 - Do NOT use \\begin{document}, \\documentclass, or any preamble commands.
 - Do NOT wrap content in {\\tiny ...} or \\begin{spacing} — handled by template.
 - Do NOT use \\section, \\subsection, or other sectioning commands.
-- Do NOT use $$ ... $$ for display math — use \\begin{align*} ... \\end{align*} instead.
+- Do NOT use $$ ... $$ for display math — use $...$ inline or \\begin{align*} ... \\end{align*}.
 
 OUTPUT FORMAT:
 For each box, output exactly:
@@ -172,6 +178,19 @@ class ContentProcessor:
         self.client = anthropic.Anthropic()
         self.model = model
 
+    def _stream_response(self, system: str, user_prompt: str) -> str:
+        """Stream a response from Claude and return the full text."""
+        collected = []
+        with self.client.messages.stream(
+            model=self.model,
+            max_tokens=16000,
+            system=system,
+            messages=[{"role": "user", "content": user_prompt}],
+        ) as stream:
+            for text in stream.text_stream:
+                collected.append(text)
+        return "".join(collected)
+
     def process(
         self,
         documents: list[ExtractedDocument],
@@ -182,14 +201,7 @@ class ContentProcessor:
         """Process extracted documents into cheat sheet boxes."""
         user_prompt = _build_user_prompt(documents, intel_hints, paper_format, max_boxes)
 
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=16000,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_prompt}],
-        )
-
-        response_text = response.content[0].text
+        response_text = self._stream_response(SYSTEM_PROMPT, user_prompt)
         boxes = _parse_boxes(response_text)
 
         if not boxes:
@@ -205,32 +217,39 @@ class ContentProcessor:
         boxes: list[Box],
         overflow_errors: list[str],
         paper_format: PaperFormat = PaperFormat.LETTER_3COL,
+        actual_pages: int = 0,
+        expected_pages: int = 1,
     ) -> list[Box]:
         """Ask Claude to make boxes shorter to fix overflow."""
         current_boxes = "\n\n".join(
             f"%%% BOX: {b.title} %%%\n{b.latex_content}\n%%% END %%%" for b in boxes
         )
 
+        # Calculate the reduction needed
+        if actual_pages > 0 and expected_pages > 0:
+            ratio = expected_pages / actual_pages
+            reduction_pct = int((1 - ratio) * 100)
+            # Aim for slightly less reduction to avoid under-filling
+            reduction_pct = max(10, reduction_pct - 10)
+        else:
+            reduction_pct = 20
+
         prompt = (
             f"The following cheat sheet boxes caused overflow on "
-            f"{FORMAT_CONSTRAINTS[paper_format]['description']}.\n\n"
+            f"{FORMAT_CONSTRAINTS[paper_format]['description']}.\n"
+            f"The content produced {actual_pages} pages but must fit in {expected_pages} page(s).\n\n"
             f"OVERFLOW ERRORS:\n" + "\n".join(f"- {e}" for e in overflow_errors) + "\n\n"
-            f"Reduce total content by approximately 20%. Strategies:\n"
-            f"- Remove the least important examples\n"
-            f"- Shorten verbose explanations\n"
+            f"Reduce total content by approximately {reduction_pct}%. Strategies:\n"
+            f"- Remove the least important or most redundant examples\n"
+            f"- Shorten the most verbose explanations slightly\n"
             f"- Combine small related boxes\n"
-            f"- Use more abbreviations and symbols\n"
-            f"- Keep ALL formulas and key definitions\n\n"
+            f"- Use inline $...$ math instead of display align* environments\n"
+            f"- Keep ALL formulas, key definitions, and most examples\n"
+            f"- Do NOT over-reduce — the result should still fill {expected_pages} page(s) completely\n\n"
             f"CURRENT BOXES:\n{current_boxes}\n\n"
             f"Output the condensed boxes in the same %%% BOX: title %%% ... %%% END %%% format."
         )
 
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=16000,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": prompt}],
-        )
-
-        new_boxes = _parse_boxes(response.content[0].text)
+        response_text = self._stream_response(SYSTEM_PROMPT, prompt)
+        new_boxes = _parse_boxes(response_text)
         return new_boxes if new_boxes else boxes

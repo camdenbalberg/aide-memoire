@@ -40,8 +40,9 @@ def cli():
 @click.option("--no-compile", is_flag=True, help="Generate LaTeX only, skip compilation.")
 @click.option("--no-verify", is_flag=True, help="Skip overflow verification.")
 @click.option("--max-boxes", type=int, default=None, help="Maximum number of boxes.")
+@click.option("--pages", type=int, default=2, help="Number of pages (e.g., 2 for front and back).")
 @click.option("--model", default="claude-sonnet-4-20250514", help="Claude model for processing.")
-def generate(input_files, paper_format, title, author, intel, output, no_compile, no_verify, max_boxes, model):
+def generate(input_files, paper_format, title, author, intel, output, no_compile, no_verify, max_boxes, pages, model):
     """Generate a cheat sheet from input files."""
     from aide_memoire.latex.generator import CheatSheetGenerator
 
@@ -55,6 +56,7 @@ def generate(input_files, paper_format, title, author, intel, output, no_compile
         intel_path=Path(intel) if intel else None,
         model=model,
         max_boxes=max_boxes,
+        expected_pages=pages,
         no_compile=no_compile,
         no_verify=no_verify,
     )

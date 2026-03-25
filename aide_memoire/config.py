@@ -16,6 +16,7 @@ class Config:
     intel_path: Path | None = None
     model: str = "claude-sonnet-4-20250514"
     max_boxes: int | None = None
+    expected_pages: int = 2
     no_compile: bool = False
     no_verify: bool = False
     max_retries: int = 3
