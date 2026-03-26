@@ -2,6 +2,8 @@
 name = "aide-memoire"
 version = "0.1.0"
 description = "Generate high-quality, dense exam reference cards from course materials using LaTeX"
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "anthropic>=0.80",
