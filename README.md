@@ -1,5 +1,8 @@
 # aide-memoire
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12+-green.svg)](https://python.org)
+
 Generate dense, single-page exam reference cards (cheat sheets) from course materials using LaTeX.
 
 Feed in your lecture slides, PDFs, Word docs, and text notes — aide-memoire extracts the content, uses Claude to distill it into organized topic boxes, and outputs a professionally typeset LaTeX PDF ready for your exam.
